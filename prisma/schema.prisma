@@ -1,0 +1,178 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ENUMS
+// ══════════════════════════════════════════════════════════════════════════════
+
+enum OrderStatus {
+  PENDING    // معلق — تم استلام الطلب
+  CONFIRMED  // مؤكد — جاري التجهيز
+  SHIPPED    // تم الشحن — في الطريق
+  DELIVERED  // تم التسليم
+  CANCELLED  // ملغي
+}
+
+enum PaymentMethod {
+  COD  // الدفع عند الاستلام
+  CARD // بطاقة ائتمان
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  USER
+//  isAdmin: false → عميل عادي | true → مدير النظام
+// ══════════════════════════════════════════════════════════════════════════════
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  // password مخزنة كـ bcrypt hash — مطلقًا مش plain text
+  password  String
+  isAdmin   Boolean  @default(false)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders  Order[]
+  reviews Review[]
+
+  @@map("users")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  CATEGORY
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique // مثال: beauty | home | accessories
+  image     String           // URL الصورة
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  PRODUCT
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Product {
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique // مستخدم في URL صفحة المنتج
+  price          Float
+  compareAtPrice Float?           // السعر قبل الخصم — اختياري
+  description    String
+  // PostgreSQL native array — كل عنصر هيظهر كنقطة في صفحة المنتج
+  details        String[]
+  // أول صورة هي الـ cover — باقيهم gallery
+  images         String[]
+  inStock        Boolean  @default(true)
+  isNew          Boolean  @default(false)
+  isBestSeller   Boolean  @default(false)
+  // بيتحسب تلقائيًا من جدول Review بعد كل إضافة/تعديل/حذف تقييم
+  rating         Float    @default(0)
+  reviewsCount   Int      @default(0)
+  categoryId     String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+  reviews    Review[]
+
+  @@map("products")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ORDER
+//  userId nullable → بيسمح بالـ guest checkout من غير تسجيل
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Order {
+  id            String        @id @default(cuid()) // بيطلع قصير زي: clxyz123
+  userId        String?                            // null = طلب ضيف
+  customerName  String
+  phone         String
+  governorate   String
+  city          String
+  address       String
+  notes         String?
+  paymentMethod PaymentMethod @default(COD)
+  status        OrderStatus   @default(PENDING)
+  shippingFee   Float         @default(60)
+  // total = مجموع (سعر × كمية) لكل item + shippingFee
+  total         Float
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  user  User?       @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ORDER ITEM
+//  price بيتسجل وقت الشراء عشان لو سعر المنتج اتغير الطلب القديم ميتأثرش
+// ══════════════════════════════════════════════════════════════════════════════
+
+model OrderItem {
+  id        String @id @default(uuid())
+  orderId   String
+  productId String
+  quantity  Int
+  // snapshot للسعر وقت الطلب
+  price     Float
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  REVIEW  (جدول إضافي — مش في المتجر UI لحد دلوقتي بس بنيناه من الأول)
+//  بعد كل insert/update/delete في هذا الجدول، server action بيحدّث
+//  Product.rating و Product.reviewsCount تلقائيًا
+// ══════════════════════════════════════════════════════════════════════════════
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int      // 1 → 5
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  // مستخدم واحد → تقييم واحد لكل منتج
+  @@unique([userId, productId])
+  @@map("reviews")
+}
