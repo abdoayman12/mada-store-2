@@ -312,48 +312,13 @@ export function getOverviewStats() {
 // بيستخدم نفس بيانات src/lib/data.ts بس بيضيف عليها CRUD operations
 // لما يتربط الـ backend، استبدل بـ Prisma calls
 
-import { categories as seedCategories } from "./data";
-import { Category } from "./types";
-
-// mutable local copy
-let adminCategories: Category[] = [...seedCategories];
-
-export function getAdminCategories(): Category[] {
-    return [...adminCategories];
-}
-
-export function getAdminCategoryById(id: string): Category | undefined {
-    return adminCategories.find((c) => c.id === id);
-}
-
-export function createCategory(data: Omit<Category, "id">): Category {
-    const newCat: Category = { ...data, id: `c${Date.now()}` };
-    adminCategories = [...adminCategories, newCat];
-    return newCat;
-}
-
-export function updateCategory(
-    id: string,
-    data: Partial<Omit<Category, "id">>,
-): Category | undefined {
-    adminCategories = adminCategories.map((c) =>
-        c.id === id ? { ...c, ...data } : c,
-    );
-    return adminCategories.find((c) => c.id === id);
-}
-
-export function deleteCategory(id: string): boolean {
-    const before = adminCategories.length;
-    adminCategories = adminCategories.filter((c) => c.id !== id);
-    return adminCategories.length < before;
-}
-
 /** Convert Arabic/English name to a URL-safe slug */
-export function toSlug(name: string): string {
-    return name
+export function toSlug(name: string, id?: string): string {
+    const slug = name
         .toLowerCase()
         .replace(/\s+/g, "-") // مسافات → شرطات
         .replace(/[^\w\u0621-\u064A-]/g, "") // يشيل كل حاجة غير حروف وأرقام وعربي
         .replace(/-+/g, "-") // شرطات متكررة → شرطة واحدة
         .replace(/^-|-$/g, ""); // يشيل شرطات من الأول والآخر
+    return slug;
 }

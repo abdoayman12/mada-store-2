@@ -9,7 +9,7 @@ import {
     FiSearch,
     FiAlertCircle,
 } from "react-icons/fi";
-import { currency } from "@/lib/utils";
+import { currency, findCategory } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import axios from "axios";
@@ -23,14 +23,10 @@ export default function AdminProductsPage() {
     const { products, setProducts } = useProducts();
     const { category } = useCatgory();
 
-    function findCategory(id: string) {
-        return category.find((cat) => cat.id === id);
-    }
-
     const filtered = products.filter((p) => {
-        const category = findCategory(p.categoryId);
+        const categoryFind = findCategory(p.categoryId, category);
 
-        return p.name.includes(query) || category?.name.includes(query);
+        return p.name.includes(query) || categoryFind?.name.includes(query);
     });
 
     async function confirmDelete(id: string) {
@@ -113,6 +109,7 @@ export default function AdminProductsPage() {
                             {filtered.map((product) => {
                                 const categoryName = findCategory(
                                     product.categoryId,
+                                    category
                                 );
                                 return (
                                     <tr

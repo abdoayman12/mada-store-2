@@ -1,27 +1,10 @@
+import { Product } from "@/generated/prisma/client";
+
 export type Category = {
     id: string;
     name: string;
     slug: string;
     image: string;
-};
-
-export type Product = {
-    id: string;
-    name: string;
-    slug: string;
-    price: number;
-    compareAtPrice?: number;
-    categoryId: string;
-    categoryName: string;
-    image: string;
-    gallery: string[];
-    rating: number;
-    reviewsCount: number;
-    description: string;
-    details: string[];
-    inStock: boolean;
-    isNew?: boolean;
-    isBestSeller?: boolean;
 };
 
 export type CartItem = {
@@ -82,7 +65,7 @@ export interface bodyProductDTO {
     inStock: boolean;
     isNew: boolean;
     isBestSeller: boolean;
-};
+}
 
 // type form state
 

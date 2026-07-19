@@ -44,7 +44,7 @@ export const checkoutSchema = z.object({
   city: z.string().min(1, "المدينة مطلوبة"),
   address: z.string().min(8, "العنوان التفصيلي مطلوب"),
   notes: z.string().optional(),
-  paymentMethod: z.enum(["cod", "card"], { errorMap: () => ({ message: "اختر طريقة الدفع" }) }),
+  paymentMethod: z.enum(["COD", "CARD"], { errorMap: () => ({ message: "اختر طريقة الدفع" }) }),
 });
 
 export type CheckoutValues = z.infer<typeof checkoutSchema>;

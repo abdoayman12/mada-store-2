@@ -33,17 +33,17 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                <CartProvider>
-                    <AuthProvider>
+                <AuthProvider>
+                    <ProductsProvider>
                         <CategoryProvider>
-                            <ProductsProvider>
+                            <CartProvider>
                                 <Header />
                                 <main className="min-h-[60vh]">{children}</main>
                                 <FooterShow />
-                            </ProductsProvider>
+                            </CartProvider>
                         </CategoryProvider>
-                    </AuthProvider>
-                </CartProvider>
+                    </ProductsProvider>
+                </AuthProvider>
             </body>
         </html>
     );

@@ -1,7 +1,6 @@
 "use client";
 
 import { SubmitEvent, useState } from "react";
-import Image from "next/image";
 import { FiCheck, FiTruck, FiCreditCard } from "react-icons/fi";
 import { useCart } from "@/context/CartContext";
 import { currency } from "@/lib/utils";
@@ -32,7 +31,7 @@ const initialValues: CheckoutValues = {
     city: "",
     address: "",
     notes: "",
-    paymentMethod: "cod",
+    paymentMethod: "COD",
 };
 
 export default function CheckoutPage() {
@@ -230,18 +229,18 @@ export default function CheckoutPage() {
                                 label="الدفع عند الاستلام"
                                 description="ادفعي نقدًا عند وصول الطلب"
                                 icon={<FiTruck size={18} />}
-                                active={values.paymentMethod === "cod"}
+                                active={values.paymentMethod === "COD"}
                                 onClick={() =>
-                                    handleChange("paymentMethod", "cod")
+                                    handleChange("paymentMethod", "COD")
                                 }
                             />
                             <PaymentOption
                                 label="بطاقة ائتمان"
                                 description="فيزا أو ماستركارد"
                                 icon={<FiCreditCard size={18} />}
-                                active={values.paymentMethod === "card"}
+                                active={values.paymentMethod === "CARD"}
                                 onClick={() =>
-                                    handleChange("paymentMethod", "card")
+                                    handleChange("paymentMethod", "CARD")
                                 }
                             />
                         </div>
@@ -267,12 +266,11 @@ export default function CheckoutPage() {
                                 className="flex items-center gap-3"
                             >
                                 <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-sage-50">
-                                    <Image
-                                        src={line.product.image}
+                                    <img
+                                        src={line.product.images[0]}
                                         alt={line.product.name}
-                                        fill
                                         sizes="56px"
-                                        className="object-cover"
+                                        className="object-cover h-full"
                                     />
                                     <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-clay-500 text-[10px] font-bold text-cream-soft">
                                         {line.quantity}

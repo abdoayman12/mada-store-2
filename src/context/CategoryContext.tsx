@@ -6,11 +6,12 @@ import {
     useState,
     ReactNode,
     Dispatch,
+    useEffect,
 } from "react";
 import { Category, Product } from "@/generated/prisma/client";
 
 interface CategoryAndProducts extends Category {
-    products: Product[]
+    products: Product[];
 }
 
 type CategorieContextValue = {
@@ -20,13 +21,17 @@ type CategorieContextValue = {
 
 const CategoryContext = createContext<CategorieContextValue | null>(null);
 
-const categoryLocal = JSON.parse(localStorage.getItem("category") || "[]");
-
 export function CategoryProvider({ children }: { children: ReactNode }) {
-    const [category, setCategory] = useState<CategoryAndProducts[]>(
-        () => categoryLocal ?? [],
-    );
+    const [category, setCategory] = useState<CategoryAndProducts[]>([]);
 
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("category");
+            if (raw) setCategory(JSON.parse(raw));
+        } catch {
+            // ignore corrupted storage
+        }
+    }, []);
     return (
         <CategoryContext.Provider value={{ category, setCategory }}>
             {children}
@@ -38,6 +43,7 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
 
 export function useCatgory() {
     const ctx = useContext(CategoryContext);
-    if (!ctx) throw new Error("useAuth must be used inside <CategoryContext>");
+    if (!ctx)
+        throw new Error("useCategory must be used inside <CategoryContext>");
     return ctx;
 }
