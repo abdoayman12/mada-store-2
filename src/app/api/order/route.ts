@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 type CheckoutValuesDTO = CheckoutValues & {
     total: Number;
 };
-// get all products
+// get all orders
 export const GET = async (request: NextRequest) => {
     try {
         const user = verifyToken(request);
@@ -17,7 +17,9 @@ export const GET = async (request: NextRequest) => {
                 { status: 401 },
             );
         }
-        const orders = await prisma.order.findMany();
+        const orders = await prisma.order.findMany({
+            include: { items: true },
+        });
         if (!orders) {
             return NextResponse.json(
                 { message: "order not found" },
@@ -33,7 +35,7 @@ export const GET = async (request: NextRequest) => {
     }
 };
 
-// add product
+// add order
 export const POST = async (request: NextRequest) => {
     try {
         const user = verifyToken(request);
@@ -66,6 +68,9 @@ export const POST = async (request: NextRequest) => {
                 paymentMethod: body.paymentMethod,
                 userId: user.id,
                 total: +body.total,
+            },
+            include: {
+                items: true,
             },
         });
         return NextResponse.json(newOrder, { status: 201 });

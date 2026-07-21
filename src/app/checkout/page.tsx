@@ -10,6 +10,7 @@ import { checkoutSchema, CheckoutValues } from "@/lib/validations";
 import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 const SHIPPING_FEE = 60;
 
@@ -49,7 +50,7 @@ export default function CheckoutPage() {
         setValues((prev) => ({ ...prev, [key]: value }));
     }
 
-    function handleSubmit(e: SubmitEvent) {
+    async function handleSubmit(e: SubmitEvent) {
         e.preventDefault();
         const result = checkoutSchema.safeParse(values);
         if (!result.success) {
@@ -64,7 +65,21 @@ export default function CheckoutPage() {
         setErrors({});
         setPlaced(true);
         clearCart();
-        // TODO: replace with a Next.js server action that creates the order in the database
+        try {
+            const res = await axios.post("http://localhost:3000/api/order", {
+                customerName: values.fullName,
+                address: values.address,
+                phone: values.phone,
+                city: values.city,
+                governorate: values.governorate,
+                notes: values.notes,
+                paymentMethod: values.paymentMethod,
+                total: total,
+            });
+            console.log(res.data)
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     if (placed) {

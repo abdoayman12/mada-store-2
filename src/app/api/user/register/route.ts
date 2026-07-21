@@ -39,8 +39,8 @@ export const POST = async (request: NextRequest) => {
             );
         }
         const userPhone = await prisma.user.findUnique({
-            where: {phone: body.phone}
-        }) 
+            where: { phone: body.phone },
+        });
         if (userPhone) {
             return NextResponse.json(
                 { message: "يجب عليك ادخال رقم هاتف غير مستخدم بالفعل" },
