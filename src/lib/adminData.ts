@@ -1,11 +1,13 @@
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
+import { Order } from "@/generated/prisma/client";
+
 export type OrderStatus =
-    | "pending"
-    | "confirmed"
-    | "shipped"
-    | "delivered"
-    | "cancelled";
+    | "PENDING" // معلق — تم استلام الطلب
+    | "CONFIRMED" // مؤكد — جاري التجهيز
+    | "SHIPPED" // تم الشحن — في الطريق
+    | "DELIVERED" // تم التسليم
+    | "CANCELLED"; // ملغي
 
 export type OrderItem = {
     productId: string;
@@ -15,167 +17,30 @@ export type OrderItem = {
     image: string;
 };
 
-export type Order = {
-    id: string;
-    customer: string;
-    phone: string;
-    governorate: string;
-    address: string;
-    items: OrderItem[];
-    total: number;
-    status: OrderStatus;
-    paymentMethod: "cod" | "card";
-    createdAt: string; // ISO date string
-};
 
 export const statusLabels: Record<OrderStatus, string> = {
-    pending: "معلق",
-    confirmed: "مؤكد",
-    shipped: "تم الشحن",
-    delivered: "تم التسليم",
-    cancelled: "ملغي",
+    PENDING: "معلق",
+    CONFIRMED: "مؤكد",
+    SHIPPED: "تم الشحن",
+    DELIVERED: "تم التسليم",
+    CANCELLED: "ملغي",
 };
 
 export const statusColors: Record<OrderStatus, string> = {
-    pending: "bg-yellow-100 text-yellow-800",
-    confirmed: "bg-sage-100 text-sage-800",
-    shipped: "bg-blue-100 text-blue-800",
-    delivered: "bg-green-100 text-green-700",
-    cancelled: "bg-red-100 text-red-700",
+    PENDING: "bg-yellow-100 text-yellow-800",
+    CONFIRMED: "bg-sage-100 text-sage-800",
+    SHIPPED: "bg-blue-100 text-blue-800",
+    DELIVERED: "bg-green-100 text-green-700",
+    CANCELLED: "bg-red-100 text-red-700",
 };
 
-let orders: Order[] = [
-    {
-        id: "ORD-0001",
-        customer: "سارة أحمد",
-        phone: "01001234567",
-        governorate: "القاهرة",
-        address: "مدينة نصر، شارع عباس العقاد، عمارة 15",
-        items: [
-            {
-                productId: "p1",
-                name: "سيروم العناية بالبشرة الطبيعي",
-                price: 480,
-                quantity: 2,
-                image: "https://picsum.photos/seed/mada-p1/80/80",
-            },
-            {
-                productId: "p4",
-                name: "طقم أكواب سيراميك مرسومة يدويًا",
-                price: 390,
-                quantity: 1,
-                image: "https://picsum.photos/seed/mada-p4/80/80",
-            },
-        ],
-        total: 1410,
-        status: "delivered",
-        paymentMethod: "cod",
-        createdAt: "2025-06-01T10:24:00Z",
-    },
-    {
-        id: "ORD-0002",
-        customer: "منى علي",
-        phone: "01112345678",
-        governorate: "الجيزة",
-        address: "الدقي، شارع التحرير",
-        items: [
-            {
-                productId: "p2",
-                name: "شمعة عود ولافندر",
-                price: 320,
-                quantity: 1,
-                image: "https://picsum.photos/seed/mada-p2/80/80",
-            },
-        ],
-        total: 380,
-        status: "shipped",
-        paymentMethod: "card",
-        createdAt: "2025-06-12T14:05:00Z",
-    },
-    {
-        id: "ORD-0003",
-        customer: "فاطمة محمد",
-        phone: "01234567890",
-        governorate: "الإسكندرية",
-        address: "المنتزه، شارع الكورنيش",
-        items: [
-            {
-                productId: "p3",
-                name: "حقيبة يد جلد طبيعي",
-                price: 1450,
-                quantity: 1,
-                image: "https://picsum.photos/seed/mada-p3/80/80",
-            },
-            {
-                productId: "p5",
-                name: "وشاح حرير منقوش",
-                price: 510,
-                quantity: 1,
-                image: "https://picsum.photos/seed/mada-p5/80/80",
-            },
-        ],
-        total: 2020,
-        status: "confirmed",
-        paymentMethod: "cod",
-        createdAt: "2025-06-20T09:00:00Z",
-    },
-    {
-        id: "ORD-0004",
-        customer: "نور حسن",
-        phone: "01556789012",
-        governorate: "القاهرة",
-        address: "المعادي، شارع ثروت",
-        items: [
-            {
-                productId: "p8",
-                name: "عطر خشب الصندل",
-                price: 650,
-                quantity: 1,
-                image: "https://picsum.photos/seed/mada-p8/80/80",
-            },
-        ],
-        total: 710,
-        status: "pending",
-        paymentMethod: "cod",
-        createdAt: "2025-06-28T17:45:00Z",
-    },
-    {
-        id: "ORD-0005",
-        customer: "هبة إبراهيم",
-        phone: "01098765432",
-        governorate: "المنوفية",
-        address: "شبين الكوم، شارع الجمهورية",
-        items: [
-            {
-                productId: "p6",
-                name: "زيت الورد للعناية بالشعر",
-                price: 260,
-                quantity: 2,
-                image: "https://picsum.photos/seed/mada-p6/80/80",
-            },
-        ],
-        total: 580,
-        status: "cancelled",
-        paymentMethod: "cod",
-        createdAt: "2025-06-25T11:30:00Z",
-    },
-];
 
-export function getOrders(): Order[] {
-    return [...orders];
-}
 
-export function getOrderById(id: string): Order | undefined {
+
+export function getOrderById(id: string, orders: Order[]): Order | undefined {
     return orders.find((o) => o.id === id);
 }
 
-export function updateOrderStatus(
-    id: string,
-    status: OrderStatus,
-): Order | undefined {
-    orders = orders.map((o) => (o.id === id ? { ...o, status } : o));
-    return orders.find((o) => o.id === id);
-}
 
 // ─── Users ───────────────────────────────────────────────────────────────────
 
@@ -273,28 +138,28 @@ export function toggleUserActive(id: string): User | undefined {
 
 // ─── Overview stats ───────────────────────────────────────────────────────────
 
-export function getOverviewStats() {
+export function getOverviewStats(orders: Order[]) {
     const totalRevenue = orders
-        .filter((o) => o.status === "delivered")
+        .filter((o) => o.status === "DELIVERED")
         .reduce((s, o) => s + o.total, 0);
     const totalOrders = orders.length;
-    const pendingOrders = orders.filter((o) => o.status === "pending").length;
+    const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
     const totalCustomers = users.filter((u) => u.role === "customer").length;
 
     const revenueByMonth: Record<string, number> = {};
     orders
-        .filter((o) => o.status === "delivered")
+        .filter((o) => o.status === "DELIVERED")
         .forEach((o) => {
-            const month = o.createdAt.slice(0, 7);
+            const month = new Date(o.createdAt).toISOString().slice(0, 7);
             revenueByMonth[month] = (revenueByMonth[month] || 0) + o.total;
         });
 
     const ordersByStatus: Record<OrderStatus, number> = {
-        pending: 0,
-        confirmed: 0,
-        shipped: 0,
-        delivered: 0,
-        cancelled: 0,
+        PENDING: 0,
+        CONFIRMED: 0,
+        SHIPPED: 0,
+        DELIVERED: 0,
+        CANCELLED: 0,
     };
     orders.forEach((o) => ordersByStatus[o.status]++);
 

@@ -1,4 +1,5 @@
 import { Product } from "@/generated/prisma/client";
+import { OrderStatus } from "./adminData";
 
 export type Category = {
     id: string;
@@ -16,13 +17,6 @@ export type CartLine = CartItem & {
     product: Product;
 };
 
-export type OrderStatus =
-    | "pending"
-    | "confirmed"
-    | "shipped"
-    | "delivered"
-    | "cancelled";
-
 export type OrderItem = {
     productId: string;
     name: string;
@@ -31,19 +25,23 @@ export type OrderItem = {
     image: string;
 };
 
+export type OrderProduct = OrderItem & {
+    product: Product
+}
+
 export type Order = {
     id: string;
-    customer: string;
+    customerName: string;
     phone: string;
     governorate: string;
     address: string;
-    items: OrderItem[];
+    items: OrderProduct[];
     total: number;
     status: OrderStatus;
-    paymentMethod: "cod" | "card";
-    createdAt: string; // ISO date string
+    city: string;
+    paymentMethod: "COD" | "CARD";
+    createdAt: Date; // ISO date string
 };
-
 // type dto
 export interface RegisterUserDto {
     name: string;

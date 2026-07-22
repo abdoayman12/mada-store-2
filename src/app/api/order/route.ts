@@ -3,11 +3,21 @@ import { verifyToken } from "@/lib/tokenAndCookies";
 import { checkoutSchema, CheckoutValues } from "@/lib/validations";
 import { NextRequest, NextResponse } from "next/server";
 
-// types
-type CheckoutValuesDTO = CheckoutValues & {
-    total: Number;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type OrderItem = {
+    productId: string;
+    quantity: number;
+    price: number;
 };
-// get all orders
+
+type CheckoutValuesDTO = CheckoutValues & {
+    total: number;
+    items: OrderItem[];
+};
+
+// ─── GET: كل الطلبات — للأدمن فقط ────────────────────────────────────────────
+
 export const GET = async (request: NextRequest) => {
     try {
         const user = verifyToken(request);
@@ -20,12 +30,6 @@ export const GET = async (request: NextRequest) => {
         const orders = await prisma.order.findMany({
             include: { items: true },
         });
-        if (!orders) {
-            return NextResponse.json(
-                { message: "order not found" },
-                { status: 404 },
-            );
-        }
         return NextResponse.json(orders, { status: 200 });
     } catch (error) {
         return NextResponse.json(
@@ -35,9 +39,11 @@ export const GET = async (request: NextRequest) => {
     }
 };
 
-// add order
+// ─── POST: إنشاء طلب جديد ────────────────────────────────────────────────────
+
 export const POST = async (request: NextRequest) => {
     try {
+        // ── 1. التحقق من الـ token ────────────────────────────────────────
         const user = verifyToken(request);
         if (!user) {
             return NextResponse.json(
@@ -48,8 +54,10 @@ export const POST = async (request: NextRequest) => {
                 { status: 401 },
             );
         }
+
         const body: CheckoutValuesDTO = await request.json();
 
+        // ── 2. Zod validation على بيانات الشحن والدفع ────────────────────
         const validation = checkoutSchema.safeParse(body);
         if (!validation.success) {
             return NextResponse.json(
@@ -57,22 +65,41 @@ export const POST = async (request: NextRequest) => {
                 { status: 400 },
             );
         }
+
+        // ── 3. التحقق إن الـ items موجودة ومش فاضية ──────────────────────
+        if (!body.items || body.items.length === 0) {
+            return NextResponse.json(
+                { message: "السلة فاضية، أضف منتجات الأول" },
+                { status: 400 },
+            );
+        }
+
+        // ── 4. إنشاء الـ Order والـ OrderItems في نفس الوقت ──────────────
         const newOrder = await prisma.order.create({
             data: {
                 customerName: body.fullName,
-                address: body.address,
                 phone: body.phone,
-                city: body.city,
                 governorate: body.governorate,
+                city: body.city,
+                address: body.address,
                 notes: body.notes,
                 paymentMethod: body.paymentMethod,
+                total: body.total,
                 userId: user.id,
-                total: +body.total,
+                //  بنعمل الـ items مع الـ order في نفس العملية
+                items: {
+                    create: body.items.map((item) => ({
+                        productId: item.productId,
+                        quantity: item.quantity,
+                        price: item.price,
+                    })),
+                },
             },
             include: {
-                items: true,
+                items: true, // بيرجع الـ items جوا الـ response
             },
         });
+
         return NextResponse.json(newOrder, { status: 201 });
     } catch (error) {
         return NextResponse.json(

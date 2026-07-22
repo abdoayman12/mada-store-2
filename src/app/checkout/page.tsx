@@ -1,6 +1,6 @@
 "use client";
 
-import { SubmitEvent, useState } from "react";
+import { useState } from "react";
 import { FiCheck, FiTruck, FiCreditCard } from "react-icons/fi";
 import { useCart } from "@/context/CartContext";
 import { currency } from "@/lib/utils";
@@ -42,6 +42,7 @@ export default function CheckoutPage() {
         Partial<Record<keyof CheckoutValues, string>>
     >({});
     const [placed, setPlaced] = useState(false);
+    const [apiError, setApiError] = useState("");
 
     function handleChange<K extends keyof CheckoutValues>(
         key: K,
@@ -50,8 +51,10 @@ export default function CheckoutPage() {
         setValues((prev) => ({ ...prev, [key]: value }));
     }
 
-    async function handleSubmit(e: SubmitEvent) {
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
+
+        // ── 1. Client-side validation ─────────────────────────────────────
         const result = checkoutSchema.safeParse(values);
         if (!result.success) {
             const fieldErrors: typeof errors = {};
@@ -63,21 +66,34 @@ export default function CheckoutPage() {
             return;
         }
         setErrors({});
-        setPlaced(true);
-        clearCart();
+        setApiError("");
+
+        // ── 2. بناء الـ items من سلة التسوق ──────────────────────────────
+        const items = lines.map((line) => ({
+            productId: line.productId,
+            quantity: line.quantity,
+            price: line.product.price, // snapshot للسعر وقت الطلب
+        }));
+
         try {
-            const res = await axios.post("http://localhost:3000/api/order", {
-                customerName: values.fullName,
-                address: values.address,
+            axios.post("/api/order", {
+                fullName: values.fullName,
                 phone: values.phone,
-                city: values.city,
                 governorate: values.governorate,
+                city: values.city,
+                address: values.address,
                 notes: values.notes,
                 paymentMethod: values.paymentMethod,
-                total: total,
+                total: subtotal + SHIPPING_FEE,
+                items, // ✅ بنبعت الـ items
             });
-            console.log(res.data)
-        } catch (error) {
+            clearCart();
+            setPlaced(true);
+        } catch (error: unknown) {
+            const msg =
+                (error as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message ?? "حدث خطأ ما، حاول تاني";
+            setApiError(msg);
             console.error(error);
         }
     }
@@ -126,6 +142,12 @@ export default function CheckoutPage() {
                     إتمام الطلب
                 </h1>
             </div>
+
+            {apiError && (
+                <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+                    {apiError}
+                </div>
+            )}
 
             <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">
                 <form
@@ -284,8 +306,7 @@ export default function CheckoutPage() {
                                     <img
                                         src={line.product.images[0]}
                                         alt={line.product.name}
-                                        sizes="56px"
-                                        className="object-cover h-full"
+                                        className="object-cover h-full w-full"
                                     />
                                     <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-clay-500 text-[10px] font-bold text-cream-soft">
                                         {line.quantity}
