@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { SubmitEvent, useState } from "react";
 import { FiCheck, FiTruck, FiCreditCard } from "react-icons/fi";
 import { useCart } from "@/context/CartContext";
 import { currency } from "@/lib/utils";
@@ -51,7 +51,7 @@ export default function CheckoutPage() {
         setValues((prev) => ({ ...prev, [key]: value }));
     }
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: SubmitEvent) {
         e.preventDefault();
 
         // ── 1. Client-side validation ─────────────────────────────────────
@@ -85,7 +85,7 @@ export default function CheckoutPage() {
                 notes: values.notes,
                 paymentMethod: values.paymentMethod,
                 total: subtotal + SHIPPING_FEE,
-                items, // ✅ بنبعت الـ items
+                items,
             });
             clearCart();
             setPlaced(true);
@@ -94,7 +94,6 @@ export default function CheckoutPage() {
                 (error as { response?: { data?: { message?: string } } })
                     ?.response?.data?.message ?? "حدث خطأ ما، حاول تاني";
             setApiError(msg);
-            console.error(error);
         }
     }
 

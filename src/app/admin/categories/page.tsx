@@ -86,8 +86,7 @@ export default function AdminCategoriesPage() {
                                 <img
                                     src={cat.image}
                                     alt={cat.name}
-                                    sizes="(max-width: 768px) 50vw, 25vw"
-                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-105 h-full w-full"
                                 />
                                 {/* Overlay actions */}
                                 <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">

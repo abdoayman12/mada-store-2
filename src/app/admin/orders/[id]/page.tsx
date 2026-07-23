@@ -43,7 +43,7 @@ export default function AdminOrderDetailsPage({
     const [saved, setSaved] = useState(false);
     const [notFoundShow, setNotFoundShow] = useState(false);
     const [selected, setSelected] = useState<OrderStatus>(order.status);
-    
+
     if (notFoundShow) notFound();
 
     useEffect(() => {
@@ -54,14 +54,26 @@ export default function AdminOrderDetailsPage({
             } catch (error) {
                 const statusCode = (error as { response?: { status?: number } })
                     ?.response?.status;
-                console.log(statusCode);
                 if (statusCode === 404) setNotFoundShow(true);
             }
         }
         fetchData();
     }, []);
 
-    function handleSave() {}
+    async function handleSave() {
+        try {
+            const res = await axios.put(`/api/order/${id}`, {
+                status: selected,
+            });
+            setOrder(res.data);
+            setSaved(true);
+        } catch (error) {
+            console.error(error);
+        }
+        setTimeout(() => {
+            setSaved(false);
+        }, 1000);
+    }
     const steps: OrderStatus[] = [
         "PENDING",
         "CONFIRMED",

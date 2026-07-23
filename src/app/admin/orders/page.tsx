@@ -33,7 +33,14 @@ export default function AdminOrdersPage() {
         }
         fetchData();
     }, []);
-    function handleStatusChange(orderId: string, status: OrderStatus) {}
+    async function handleStatusChange(orderId: string, status: OrderStatus) {
+        try {
+            const res = await axios.put(`/api/order/${orderId}`, { status });
+            setOrders(orders.map((o) => (o.id === orderId ? res.data : o)));
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const filtered =
         filterStatus === "all"
