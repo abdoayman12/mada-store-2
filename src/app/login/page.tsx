@@ -82,7 +82,6 @@ function LoginForm() {
             setUser((await res).data);
             localStorage.setItem("user", JSON.stringify((await res).data));
             router.replace("/");
-            console.log(user);
         } catch (err: unknown) {
             // استخرج رسالة الخطأ من الـ API response
             const message =

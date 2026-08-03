@@ -90,7 +90,6 @@ export default function RegisterPage() {
             setUser((await res).data);
             localStorage.setItem("user", JSON.stringify((await res).data));
             router.replace("/");
-            console.log(user);
         } catch (err: unknown) {
             const message =
                 (err as { response?: { data?: { message?: string } } })

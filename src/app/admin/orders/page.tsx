@@ -22,6 +22,7 @@ export default function AdminOrdersPage() {
     const [filterStatus, setFilterStatus] = useState<OrderStatus | "all">(
         "all",
     );
+    console.log(orders)
     useEffect(() => {
         async function fetchData() {
             try {
