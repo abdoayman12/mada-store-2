@@ -19,12 +19,17 @@ export default function AdminUsersPage() {
         "all",
     );
 
-    function handleToggle(id: string) {
-        // setUsers((currentUsers) =>
-        //     currentUsers.map((user) =>
-        //         user.id === id ? { ...user, active: !user.active } : user,
-        //     ),
-        // );
+    async function handleToggle(id: string, active: boolean) {
+        try {
+            const res = await axios.put(`/api/allUsers/${id}`, {
+                active: !active,
+            });
+            setUsers((currentUsers) =>
+                currentUsers.map((user) => (user.id === id ? res.data : user)),
+            );
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     useEffect(() => {
@@ -59,7 +64,7 @@ export default function AdminUsersPage() {
             return matchQuery && matchRole;
         });
     }, [users, roleFilter, query]);
-    console.log(users)
+    console.log(users);
     return (
         <div className="space-y-5">
             {/* Filters */}
@@ -141,7 +146,7 @@ export default function AdminUsersPage() {
                         </thead>
                         <tbody className="divide-y divide-[#E3DECF]">
                             {filtered.map((user) => {
-                                const totalSpent = user.orders.reduce(
+                                const totalSpent = user.orders?.reduce(
                                     (total, o) => total + o.total,
                                     0,
                                 );
@@ -191,7 +196,7 @@ export default function AdminUsersPage() {
                                             </span>
                                         </td>
                                         <td className="px-5 py-3 text-center font-bold text-[#2A2E26]">
-                                            {user.orders.length}
+                                            {user.orders ? user.orders.length : 0}
                                         </td>
                                         <td className="px-5 py-3 font-bold text-[#C9925E]">
                                             {totalSpent > 0
@@ -220,7 +225,10 @@ export default function AdminUsersPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        handleToggle(user.id)
+                                                        handleToggle(
+                                                            user.id,
+                                                            user.active,
+                                                        )
                                                     }
                                                     aria-label={
                                                         user.active

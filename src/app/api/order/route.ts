@@ -30,6 +30,12 @@ export const GET = async (request: NextRequest) => {
         const orders = await prisma.order.findMany({
             include: { items: true },
         });
+        if (!orders) {
+            return NextResponse.json(
+                { message: "orders not found" },
+                { status: 404 },
+            );
+        }
         return NextResponse.json(orders, { status: 200 });
     } catch (error) {
         return NextResponse.json(
