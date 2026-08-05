@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FiFilter } from "react-icons/fi";
@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
 import { useProducts } from "@/context/ProductsContext";
 import { useCatgory } from "@/context/CategoryContext";
+import axios from "axios";
 
 type SortKey = "default" | "price-asc" | "price-desc" | "rating";
 
@@ -17,17 +18,31 @@ export default function ProductsView() {
     const activeCategory = searchParams.get("category");
     const [sort, setSort] = useState<SortKey>("default");
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-    const { products } = useProducts();
+    const { products, setProducts } = useProducts();
     const { category } = useCatgory();
 
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const res = await axios.get(
+                    "http://localhost:3000/api/products",
+                );
+                setProducts(res.data);
+                localStorage.setItem("products", JSON.stringify(res.data));
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        fetchData();
+    }, []);
     const filtered = useMemo(() => {
         let list = activeCategory
-            ? products.filter(
+            ? products?.filter(
                   (p) =>
                       category.find((c) => c.slug === activeCategory)?.id ===
                       p.categoryId,
               )
-            : products;
+            : products || [];
 
         if (sort === "price-asc")
             list = [...list].sort((a, b) => a.price - b.price);

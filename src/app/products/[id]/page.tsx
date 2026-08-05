@@ -15,7 +15,8 @@ import Rating from "@/components/ui/Rating";
 import Button from "@/components/ui/Button";
 import QuantityStepper from "@/components/ui/QuantityStepper";
 import ProductCard from "@/components/ui/ProductCard";
-import { getProductBySlug, getRelatedProducts } from "@/lib/data";
+import ProductReviews from "@/components/sections/ProductReviews";
+import { getRelatedProducts } from "@/lib/data";
 import { currency, findCategory } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
@@ -28,7 +29,7 @@ export default function ProductDetailsPage({
 }) {
     const { id } = use(params);
     const { products } = useProducts();
-    const product = getProductBySlug(id, products);
+    const product = products.find((p) => p.id === id);
     if (!product) return notFound();
 
     const related = getRelatedProducts(product, products);
@@ -46,6 +47,7 @@ export default function ProductDetailsPage({
 
     return (
         <div className="wrap py-10">
+            {/* ── Breadcrumb ── */}
             <nav className="mb-6 flex items-center gap-1.5 text-sm text-ink-soft">
                 <Link href="/" className="hover:text-sage-700">
                     الرئيسية
@@ -58,14 +60,16 @@ export default function ProductDetailsPage({
                 <span className="text-ink">{product.name}</span>
             </nav>
 
+            {/* ── Product grid ── */}
             <div className="grid gap-10 lg:grid-cols-2">
+                {/* صور المنتج */}
                 <div>
                     <div className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-sage-50 shadow-soft">
                         <img
                             src={product.images[activeImage]}
                             alt={product.name}
                             sizes="50vw"
-                            className="object-cover h-full"
+                            className="object-cover h-full w-full"
                         />
                         <div className="absolute top-4 right-4 flex flex-col gap-1.5">
                             {product.isNew && <Badge tone="sage">جديد</Badge>}
@@ -89,8 +93,7 @@ export default function ProductDetailsPage({
                                     <img
                                         src={img}
                                         alt=""
-                                        sizes="80px"
-                                        className="object-cover h-full"
+                                        className="object-cover h-full w-full"
                                     />
                                 </button>
                             ))}
@@ -98,6 +101,7 @@ export default function ProductDetailsPage({
                     )}
                 </div>
 
+                {/* بيانات المنتج */}
                 <div>
                     <span className="text-sm font-semibold text-sage-600">
                         {findCategory(product.categoryId, category)?.name}
@@ -179,6 +183,7 @@ export default function ProductDetailsPage({
                 </div>
             </div>
 
+            {/* ── منتجات مشابهة ── */}
             {related.length > 0 && (
                 <section className="mt-20">
                     <h2 className="font-display text-2xl font-bold text-ink">
@@ -191,6 +196,9 @@ export default function ProductDetailsPage({
                     </div>
                 </section>
             )}
+
+            {/* ── قسم التقييمات ── */}
+            <ProductReviews productId={product.id} />
         </div>
     );
 }

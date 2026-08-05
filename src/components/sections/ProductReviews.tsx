@@ -1,0 +1,453 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import axios from "axios";
+import { FiEdit2, FiTrash2, FiUser, FiAlertCircle } from "react-icons/fi";
+import { FaStar } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
+import StarSelector from "@/components/ui/StarSelector";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ReviewUser = { id: string; name: string };
+
+type Review = {
+    id: string;
+    userId: string;
+    productId: string;
+    rating: number;
+    comment?: string | null;
+    createdAt: string;
+    user: ReviewUser;
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+}
+
+/** توزيع التقييمات — كم مرة ظهرت كل نجمة */
+function buildDistribution(reviews: Review[]) {
+    const dist: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach((r) => dist[r.rating]++);
+    return dist;
+}
+
+/** متوسط التقييم */
+function calcAvg(reviews: Review[]) {
+    if (!reviews.length) return 0;
+    return reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/** شريط توزيع النجوم */
+function DistributionBar({
+    star,
+    count,
+    total,
+}: {
+    star: number;
+    count: number;
+    total: number;
+}) {
+    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+    return (
+        <div className="flex items-center gap-2 text-sm">
+            <span className="w-4 text-left text-xs font-bold text-ink-soft">
+                {star}
+            </span>
+            <FaStar size={12} className="text-clay-400 shrink-0" />
+            <div className="flex-1 h-2 rounded-full bg-line overflow-hidden">
+                <div
+                    className="h-full rounded-full bg-clay-400 transition-all duration-700"
+                    style={{ width: `${pct}%` }}
+                />
+            </div>
+            <span className="w-6 text-xs text-ink-soft text-left">{count}</span>
+        </div>
+    );
+}
+
+/** كارت تقييم واحد */
+function ReviewCard({
+    review,
+    isOwner,
+    onEdit,
+    onDelete,
+}: {
+    review: Review;
+    isOwner: boolean;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
+    return (
+        <div className="rounded-2xl bg-white p-5 shadow-soft">
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-50 text-sage-700">
+                        <FiUser size={18} />
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold text-ink">
+                            {review.user.name}
+                        </p>
+                        <p className="text-xs text-ink-faint">
+                            {formatDate(review.createdAt)}
+                        </p>
+                    </div>
+                </div>
+
+                {/* أيقونات التعديل والحذف — للمالك فقط */}
+                {isOwner && (
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={onEdit}
+                            aria-label="تعديل التقييم"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition hover:bg-sage-50 hover:text-sage-700"
+                        >
+                            <FiEdit2 size={14} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onDelete}
+                            aria-label="حذف التقييم"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition hover:bg-red-50 hover:text-red-500"
+                        >
+                            <FiTrash2 size={14} />
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* النجوم */}
+            <div className="mt-3 flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                    <FaStar
+                        key={s}
+                        size={14}
+                        className={
+                            s <= review.rating
+                                ? "text-clay-400"
+                                : "text-ink-faint"
+                        }
+                    />
+                ))}
+            </div>
+
+            {/* التعليق */}
+            {review.comment && (
+                <p className="mt-3 text-sm leading-7 text-ink-soft">
+                    {review.comment}
+                </p>
+            )}
+        </div>
+    );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
+export default function ProductReviews({ productId }: { productId: string }) {
+    const { user } = useAuth();
+
+    // ── State ──────────────────────────────────────────────────────────────
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [fetchError, setFetchError] = useState("");
+
+    // فورم الإضافة/التعديل
+    const [formOpen, setFormOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
+    const [submitSuccess, setSubmitSuccess] = useState("");
+
+    // ── Fetch Reviews ──────────────────────────────────────────────────────
+    const fetchReviews = useCallback(async () => {
+        try {
+            setFetchError("");
+            const { data } = await axios.get<Review[]>(
+                `/api/reviews/${productId}`,
+            );
+            setReviews(data);
+        } catch {
+            setFetchError("تعذّر تحميل التقييمات، حاول تاني");
+        } finally {
+            setLoading(false);
+        }
+    }, [productId]);
+
+    useEffect(() => {
+        fetchReviews();
+    }, [fetchReviews]);
+
+    // ── Derived data ───────────────────────────────────────────────────────
+    const avg = calcAvg(reviews);
+    const dist = buildDistribution(reviews);
+    const userReview = reviews.find((r) => r.userId === user?.id);
+
+    // ── Open form for adding ────────────────────────────────────────────────
+    function openAddForm() {
+        setEditingId(null);
+        setRating(0);
+        setComment("");
+        setSubmitError("");
+        setSubmitSuccess("");
+        setFormOpen(true);
+    }
+
+    // ── Open form for editing ───────────────────────────────────────────────
+    function openEditForm(review: Review) {
+        setEditingId(review.id);
+        setRating(review.rating);
+        setComment(review.comment ?? "");
+        setSubmitError("");
+        setSubmitSuccess("");
+        setFormOpen(true);
+    }
+
+    // ── Submit review (add or update) ──────────────────────────────────────
+    async function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (rating === 0) {
+            setSubmitError("اختر عدد النجوم أولًا");
+            return;
+        }
+
+        setSubmitting(true);
+        setSubmitError("");
+        setSubmitSuccess("");
+
+        try {
+            await axios.post(`/api/reviews/${productId}`, { rating, comment });
+            setSubmitSuccess(
+                editingId ? "تم تعديل تقييمك بنجاح" : "تم إضافة تقييمك بنجاح",
+            );
+            setFormOpen(false);
+            await fetchReviews(); // إعادة تحميل التقييمات
+        } catch (err: unknown) {
+            const msg =
+                (err as { response?: { data?: { message?: string } } })
+                    ?.response?.data?.message ?? "حدث خطأ، حاول تاني";
+            setSubmitError(msg);
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    // ── Delete review ──────────────────────────────────────────────────────
+    async function handleDelete() {
+        if (!confirm("هتحذف تقييمك؟")) return;
+        try {
+            await axios.delete(`/api/reviews/${productId}`);
+            setSubmitSuccess("تم حذف تقييمك");
+            setFormOpen(false);
+            await fetchReviews();
+        } catch {
+            setSubmitError("حدث خطأ أثناء الحذف");
+        }
+    }
+
+    // ─── Render ──────────────────────────────────────────────────────────────
+
+    return (
+        <section className="mt-20">
+            {/* ── Header ── */}
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
+                <div>
+                    <h2 className="font-display text-2xl font-bold text-ink">
+                        تقييمات العملاء
+                    </h2>
+                    <p className="mt-1 text-sm text-ink-soft">
+                        {reviews.length > 0
+                            ? `${reviews.length} تقييم`
+                            : "لا توجد تقييمات بعد — كن أول من يقيّم"}
+                    </p>
+                </div>
+
+                {/* زر الإضافة */}
+                {user ? (
+                    !userReview && !formOpen ? (
+                        <button
+                            type="button"
+                            onClick={openAddForm}
+                            className="rounded-full bg-sage-600 px-5 py-2.5 text-sm font-bold text-cream-soft transition hover:bg-sage-700"
+                        >
+                            أضف تقييمك
+                        </button>
+                    ) : null
+                ) : (
+                    <Link
+                        href={`/login?callbackUrl=/products/${productId}`}
+                        className="rounded-full border border-line px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-sage-500 hover:text-sage-700"
+                    >
+                        سجّل دخولك لإضافة تقييم
+                    </Link>
+                )}
+            </div>
+
+            {/* ── رسائل النجاح والخطأ ── */}
+            {submitSuccess && (
+                <div className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">
+                    {submitSuccess}
+                </div>
+            )}
+
+            {/* ── Overview: متوسط + توزيع النجوم ── */}
+            {reviews.length > 0 && (
+                <div className="mt-8 grid gap-6 sm:grid-cols-[auto_1fr]">
+                    {/* متوسط كبير */}
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white px-10 py-6 shadow-soft">
+                        <span className="font-display text-5xl font-bold text-ink">
+                            {avg.toFixed(1)}
+                        </span>
+                        <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                                <FaStar
+                                    key={s}
+                                    size={16}
+                                    className={
+                                        s <= Math.round(avg)
+                                            ? "text-clay-400"
+                                            : "text-ink-faint"
+                                    }
+                                />
+                            ))}
+                        </div>
+                        <span className="text-xs text-ink-soft">
+                            من {reviews.length} تقييم
+                        </span>
+                    </div>
+
+                    {/* أشرطة التوزيع */}
+                    <div className="flex flex-col justify-center gap-2 rounded-2xl bg-white p-5 shadow-soft">
+                        {[5, 4, 3, 2, 1].map((star) => (
+                            <DistributionBar
+                                key={star}
+                                star={star}
+                                count={dist[star]}
+                                total={reviews.length}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ── فورم الإضافة/التعديل ── */}
+            {formOpen && (
+                <div className="mt-8 rounded-2xl border-2 border-sage-200 bg-white p-6 shadow-soft">
+                    <h3 className="font-display text-lg font-bold text-ink">
+                        {editingId ? "تعديل تقييمك" : "أضف تقييمك"}
+                    </h3>
+
+                    {submitError && (
+                        <div className="mt-3 flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600">
+                            <FiAlertCircle size={15} />
+                            {submitError}
+                        </div>
+                    )}
+
+                    <form
+                        onSubmit={handleSubmit}
+                        noValidate
+                        className="mt-5 space-y-5"
+                    >
+                        {/* اختيار النجوم */}
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-ink">
+                                تقييمك <span className="text-clay-500">*</span>
+                            </label>
+                            <StarSelector value={rating} onChange={setRating} />
+                        </div>
+
+                        {/* التعليق */}
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-ink">
+                                تعليقك{" "}
+                                <span className="text-ink-faint font-normal">
+                                    (اختياري)
+                                </span>
+                            </label>
+                            <textarea
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                placeholder="شاركنا تجربتك مع المنتج..."
+                                rows={4}
+                                className="w-full rounded-xl border border-line bg-cream-soft px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/30 resize-y"
+                            />
+                        </div>
+
+                        {/* الأزرار */}
+                        <div className="flex flex-wrap items-center gap-3">
+                            <button
+                                type="submit"
+                                disabled={submitting}
+                                className="rounded-full bg-sage-600 px-6 py-2.5 text-sm font-bold text-cream-soft transition hover:bg-sage-700 disabled:opacity-60"
+                            >
+                                {submitting
+                                    ? "جاري الحفظ..."
+                                    : editingId
+                                      ? "حفظ التعديل"
+                                      : "نشر التقييم"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setFormOpen(false);
+                                    setSubmitError("");
+                                }}
+                                className="rounded-full border border-line px-6 py-2.5 text-sm font-semibold text-ink transition hover:bg-sage-50"
+                            >
+                                إلغاء
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {/* ── قائمة التقييمات ── */}
+            <div className="mt-8 space-y-4">
+                {loading && (
+                    <div className="py-8 text-center text-sm text-ink-soft">
+                        جاري تحميل التقييمات...
+                    </div>
+                )}
+
+                {fetchError && (
+                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-red-500">
+                        <FiAlertCircle size={16} />
+                        {fetchError}
+                    </div>
+                )}
+
+                {!loading && !fetchError && reviews.length === 0 && (
+                    <div className="rounded-2xl bg-white py-12 text-center shadow-soft">
+                        <p className="text-sm text-ink-soft">
+                            لا توجد تقييمات بعد — كن أول من يقيّم هذا المنتج
+                        </p>
+                    </div>
+                )}
+
+                {reviews.map((review) => (
+                    <ReviewCard
+                        key={review.id}
+                        review={review}
+                        isOwner={user?.id === review.userId}
+                        onEdit={() => openEditForm(review)}
+                        onDelete={handleDelete}
+                    />
+                ))}
+            </div>
+        </section>
+    );
+}

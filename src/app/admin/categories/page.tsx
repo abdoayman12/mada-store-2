@@ -16,6 +16,7 @@ export default function AdminCategoriesPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const { category, setCategory } = useCatgory();
+
     async function confirmDelete(id: string) {
         setLoading(true);
         try {
@@ -30,6 +31,7 @@ export default function AdminCategoriesPage() {
             setDeleteId(null);
         }
     }
+    
     useEffect(() => {
         async function fetchCategories() {
             try {
