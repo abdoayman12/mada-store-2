@@ -1,18 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { verifyToken } from "@/lib/tokenAndCookies";
+import { reviewSchema } from "@/lib/validations";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-
-// ─── Validation ───────────────────────────────────────────────────────────────
-
-const reviewSchema = z.object({
-    rating: z
-        .number()
-        .int()
-        .min(1, "التقييم يجب أن يكون بين 1 و 5")
-        .max(5, "التقييم يجب أن يكون بين 1 و 5"),
-    comment: z.string().optional(),
-});
 
 // ─── Helper: إعادة حساب rating و reviewsCount بعد كل عملية ──────────────────
 

@@ -7,43 +7,8 @@ import { FiEdit2, FiTrash2, FiUser, FiAlertCircle } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import StarSelector from "@/components/ui/StarSelector";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ReviewUser = { id: string; name: string };
-
-type Review = {
-    id: string;
-    userId: string;
-    productId: string;
-    rating: number;
-    comment?: string | null;
-    createdAt: string;
-    user: ReviewUser;
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString("ar-EG", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
-}
-
-/** توزيع التقييمات — كم مرة ظهرت كل نجمة */
-function buildDistribution(reviews: Review[]) {
-    const dist: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    reviews.forEach((r) => dist[r.rating]++);
-    return dist;
-}
-
-/** متوسط التقييم */
-function calcAvg(reviews: Review[]) {
-    if (!reviews.length) return 0;
-    return reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
-}
+import { Review } from "@/lib/types";
+import { buildDistribution, calcAvg, formatDate } from "@/lib/data";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -217,7 +182,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
     }
 
     // ── Submit review (add or update) ──────────────────────────────────────
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: React.SubmitEvent) {
         e.preventDefault();
         if (rating === 0) {
             setSubmitError("اختر عدد النجوم أولًا");
@@ -276,7 +241,7 @@ export default function ProductReviews({ productId }: { productId: string }) {
                 </div>
 
                 {/* زر الإضافة */}
-                {user ? (
+                {user?.name ? (
                     !userReview && !formOpen ? (
                         <button
                             type="button"

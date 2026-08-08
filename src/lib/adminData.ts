@@ -42,99 +42,6 @@ export function getOrderById(id: string, orders: Order[]): Order | undefined {
 }
 
 
-// ─── Users ───────────────────────────────────────────────────────────────────
-
-export type UserRole = "customer" | "admin";
-
-export type User = {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    role: UserRole;
-    ordersCount: number;
-    totalSpent: number;
-    joinedAt: string;
-    active: boolean;
-};
-
-let users: User[] = [
-    {
-        id: "u1",
-        name: "سارة أحمد",
-        email: "sara@example.com",
-        phone: "01001234567",
-        role: "customer",
-        ordersCount: 3,
-        totalSpent: 2800,
-        joinedAt: "2025-01-10T00:00:00Z",
-        active: true,
-    },
-    {
-        id: "u2",
-        name: "منى علي",
-        email: "mona@example.com",
-        phone: "01112345678",
-        role: "customer",
-        ordersCount: 1,
-        totalSpent: 380,
-        joinedAt: "2025-03-20T00:00:00Z",
-        active: true,
-    },
-    {
-        id: "u3",
-        name: "فاطمة محمد",
-        email: "fatma@example.com",
-        phone: "01234567890",
-        role: "customer",
-        ordersCount: 2,
-        totalSpent: 3200,
-        joinedAt: "2025-02-14T00:00:00Z",
-        active: true,
-    },
-    {
-        id: "u4",
-        name: "نور حسن",
-        email: "nour@example.com",
-        phone: "01556789012",
-        role: "customer",
-        ordersCount: 1,
-        totalSpent: 710,
-        joinedAt: "2025-05-01T00:00:00Z",
-        active: true,
-    },
-    {
-        id: "u5",
-        name: "هبة إبراهيم",
-        email: "heba@example.com",
-        phone: "01098765432",
-        role: "customer",
-        ordersCount: 1,
-        totalSpent: 580,
-        joinedAt: "2025-04-18T00:00:00Z",
-        active: false,
-    },
-    {
-        id: "u6",
-        name: "مدير النظام",
-        email: "admin@mada-store.com",
-        phone: "01000000000",
-        role: "admin",
-        ordersCount: 0,
-        totalSpent: 0,
-        joinedAt: "2025-01-01T00:00:00Z",
-        active: true,
-    },
-];
-
-export function getUsers(): User[] {
-    return [...users];
-}
-
-export function toggleUserActive(id: string): User | undefined {
-    users = users.map((u) => (u.id === id ? { ...u, active: !u.active } : u));
-    return users.find((u) => u.id === id);
-}
 
 // ─── Overview stats ───────────────────────────────────────────────────────────
 
@@ -144,7 +51,6 @@ export function getOverviewStats(orders: Order[]) {
         .reduce((s, o) => s + o.total, 0);
     const totalOrders = orders.length;
     const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
-    const totalCustomers = users.filter((u) => u.role === "customer").length;
 
     const revenueByMonth: Record<string, number> = {};
     orders
@@ -167,7 +73,6 @@ export function getOverviewStats(orders: Order[]) {
         totalRevenue,
         totalOrders,
         pendingOrders,
-        totalCustomers,
         revenueByMonth,
         ordersByStatus,
     };

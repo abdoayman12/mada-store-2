@@ -5,10 +5,9 @@ import { usePathname } from "next/navigation";
 import { FiBell } from "react-icons/fi";
 
 const titles: Record<string, string> = {
-    "/admin": "لوحة التحكم",
+    "/admin": "إدارة المنتجات",
     "/admin/categories": "إدارة الفئات",
     "/admin/categories/new": "إضافة فئة جديدة",
-    "/admin/products": "إدارة المنتجات",
     "/admin/products/new": "إضافة منتج جديد",
     "/admin/orders": "إدارة الطلبات",
     "/admin/users": "إدارة المستخدمين",

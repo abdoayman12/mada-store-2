@@ -42,6 +42,17 @@ export type Order = {
     paymentMethod: "COD" | "CARD";
     createdAt: Date; // ISO date string
 };
+type ReviewUser = { id: string; name: string };
+
+export type Review = {
+    id: string;
+    userId: string;
+    productId: string;
+    rating: number;
+    comment?: string | null;
+    createdAt: string;
+    user: ReviewUser;
+};
 // type dto
 export interface RegisterUserDto {
     name: string;

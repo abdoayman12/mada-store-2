@@ -6,8 +6,10 @@ import {
     useState,
     ReactNode,
     Dispatch,
+    useEffect,
 } from "react";
 import { User } from "@/generated/prisma/client";
+import axios from "axios";
 
 type AuthContextValue = {
     user: User | null;
@@ -29,17 +31,28 @@ export const defaultValueUser = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const userLocal = (() => {
-    try {
-        return JSON.parse(localStorage.getItem("user") || "null");
-    } catch {
-        return defaultValueUser;
-    }
-})();
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User>(() => userLocal ?? defaultValueUser);
+    const [user, setUser] = useState<User>(() => defaultValueUser);
 
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("user");
+            if (raw) {
+                setUser(JSON.parse(raw));
+            } else {
+                axios
+                    .get("/api/user")
+                    .then((res) => {
+                        setUser(res.data);
+                    })
+                    .catch((error) => {
+                        console.log(error);
+                    });
+            }
+        } catch {
+            setUser(defaultValueUser);
+        }
+    }, []);
     return (
         <AuthContext.Provider value={{ user, setUser }}>
             {children}

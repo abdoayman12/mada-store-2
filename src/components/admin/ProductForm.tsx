@@ -104,7 +104,7 @@ export default function ProductForm({ product }: { product?: Product }) {
                 setProducts(productsUpd);
                 localStorage.setItem("products", JSON.stringify(productsUpd));
                 setSaved(true);
-                setTimeout(() => router.replace("/admin/products"), 1000);
+                setTimeout(() => router.replace("/admin"), 1000);
             } catch (error) {
                 console.error(error);
             }
