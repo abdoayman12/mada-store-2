@@ -6,14 +6,13 @@ import { FiCheck } from "react-icons/fi";
 import { FormStateProduct } from "@/lib/types";
 import { FieldWrapper, Input, Textarea, Select } from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
+import ImageUploader from "@/components/ui/ImageUploader";
 import { useCatgory } from "@/context/CategoryContext";
 import axios from "axios";
 import { useProducts } from "@/context/ProductsContext";
 import { Product } from "@/generated/prisma/client";
 
 // ── DB → Form ─────────────────────────────────────────────────────────────────
-// لو المنتج موجود (edit): بيحوّل الـ array لأسطر في الـ Textarea
-// مثال: ["100 مل", "خالٍ من الكحول"] → "100 مل\nخالٍ من الكحول"
 
 function toFormState(product?: Partial<Product>): FormStateProduct {
     return {
@@ -22,7 +21,8 @@ function toFormState(product?: Partial<Product>): FormStateProduct {
         price: product?.price?.toString() ?? "",
         compareAtPrice: product?.compareAtPrice?.toString() ?? "",
         description: product?.description ?? "",
-        details: product?.details?.join("\n") ?? "", // ← join هنا
+        details: product?.details?.join("\n") ?? "",
+        images: product?.images ?? [], // ← جديد
         inStock: product?.inStock ?? true,
         isNew: product?.isNew ?? false,
         isBestSeller: product?.isBestSeller ?? false,
@@ -30,14 +30,12 @@ function toFormState(product?: Partial<Product>): FormStateProduct {
 }
 
 // ── Form → API ────────────────────────────────────────────────────────────────
-// بيحوّل الـ string رجع لـ array قبل ما يبعت للـ API أو الـ DB
-// مثال: "100 مل\n\nخالٍ من الكحول\n" → ["100 مل", "خالٍ من الكحول"]
 
 function parseDetails(raw: string): string[] {
     return raw
-        .split("\n") // فصّل على كل سطر
-        .map((s) => s.trim()) // شيل مسافات من الأول والآخر
-        .filter(Boolean); // شيل الأسطر الفاضية
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -55,7 +53,6 @@ export default function ProductForm({ product }: { product?: Product }) {
     const { category } = useCatgory();
     const { products, setProducts } = useProducts();
 
-    // functions--------------------
     function set<K extends keyof FormStateProduct>(
         key: K,
         value: FormStateProduct[K],
@@ -70,6 +67,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         if (!form.price || isNaN(Number(form.price)))
             e.price = "السعر مطلوب وصحيح";
         if (!form.description.trim()) e.description = "الوصف مطلوب";
+        if (form.images.length === 0) e.images = "أضف صورة واحدة على الأقل";
         setErrors(e);
         return Object.keys(e).length === 0;
     }
@@ -77,7 +75,6 @@ export default function ProductForm({ product }: { product?: Product }) {
     async function handleSubmit() {
         if (!validate()) return;
 
-        // ── البيانات الجاهزة للـ API ──────────────────────────────────────────
         const payload = {
             name: form.name.trim(),
             categoryId: form.categoryId,
@@ -86,7 +83,8 @@ export default function ProductForm({ product }: { product?: Product }) {
                 ? Number(form.compareAtPrice)
                 : undefined,
             description: form.description.trim(),
-            details: parseDetails(form.details), // ← split هنا → string[]
+            details: parseDetails(form.details),
+            images: form.images, // ← جديد
             inStock: form.inStock,
             isNew: form.isNew,
             isBestSeller: form.isBestSeller,
@@ -114,13 +112,12 @@ export default function ProductForm({ product }: { product?: Product }) {
                     "http://localhost:3000/api/products",
                     payload,
                 );
-                setProducts([...products, res.data]);
-                localStorage.setItem(
-                    "products",
-                    JSON.stringify([...products, res.data]),
-                );
+                console.log(res.data)
+                const updated = [...products, res.data];
+                setProducts(updated);
+                localStorage.setItem("products", JSON.stringify(updated));
                 setSaved(true);
-                setTimeout(() => router.replace("/admin/products"), 1000);
+                setTimeout(() => router.replace("/admin"), 1000);
             } catch (error) {
                 console.error(error);
             }
@@ -139,6 +136,7 @@ export default function ProductForm({ product }: { product?: Product }) {
                 </div>
             )}
 
+            {/* ── المعلومات الأساسية ── */}
             <div className="rounded-2xl bg-white p-6 shadow-soft space-y-5">
                 <h2 className="font-display text-base font-bold text-[#2A2E26] border-b border-[#E3DECF] pb-3">
                     المعلومات الأساسية
@@ -213,8 +211,8 @@ export default function ProductForm({ product }: { product?: Product }) {
                     hint="كل سطر هيتحول لنقطة (•) في صفحة المنتج — اضغط Enter للسطر الجديد"
                 >
                     <Textarea
-                        value={form.details} // ← string عادي
-                        onChange={(e) => set("details", e.target.value)} // ← بيحفظ كـ string
+                        value={form.details}
+                        onChange={(e) => set("details", e.target.value)}
                         placeholder={
                             "100 مل\nخالٍ من الكحول\nمناسب لكل أنواع البشرة"
                         }
@@ -237,6 +235,32 @@ export default function ProductForm({ product }: { product?: Product }) {
                 </FieldWrapper>
             </div>
 
+            {/* ── صور المنتج ── */}
+            <div className="rounded-2xl bg-white p-6 shadow-soft space-y-4">
+                <div className="border-b border-[#E3DECF] pb-3">
+                    <h2 className="font-display text-base font-bold text-[#2A2E26]">
+                        صور المنتج
+                    </h2>
+                    <p className="mt-1 text-xs text-[#9A9F8F]">
+                        أول صورة هي الغلاف اللي هيظهر في قائمة المنتجات
+                    </p>
+                </div>
+
+                <ImageUploader
+                    images={form.images}
+                    onChange={(imgs) => set("images", imgs)}
+                    maxImages={6}
+                />
+
+                {/* رسالة خطأ الصور */}
+                {errors.images && (
+                    <p className="text-xs font-medium text-red-600">
+                        {errors.images}
+                    </p>
+                )}
+            </div>
+
+            {/* ── الحالة والوسوم ── */}
             <div className="rounded-2xl bg-white p-6 shadow-soft space-y-4">
                 <h2 className="font-display text-base font-bold text-[#2A2E26] border-b border-[#E3DECF] pb-3">
                     الحالة والوسوم

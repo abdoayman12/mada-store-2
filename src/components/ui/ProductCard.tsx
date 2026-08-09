@@ -22,8 +22,8 @@ export default function ProductCard({ product }: { product: Product }) {
                 <img
                     src={product.images[0]}
                     alt={product.name}
-                    sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover h-full transition-transform duration-500 group-hover:scale-[1.06]"
+                    sizes="(max-width: 768px) 20vw, 25vw"
+                    className="object-contain h-full transition-transform duration-500 group-hover:scale-[1.06]"
                 />
                 <div className="absolute top-3 right-3 flex flex-col gap-1.5">
                     {product.isNew && <Badge tone="sage">جديد</Badge>}

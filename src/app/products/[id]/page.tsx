@@ -69,7 +69,7 @@ export default function ProductDetailsPage({
                             src={product.images[activeImage]}
                             alt={product.name}
                             sizes="50vw"
-                            className="object-cover h-full w-full"
+                            className="object-contain h-full w-full"
                         />
                         <div className="absolute top-4 right-4 flex flex-col gap-1.5">
                             {product.isNew && <Badge tone="sage">جديد</Badge>}

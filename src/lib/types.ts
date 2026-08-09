@@ -26,8 +26,8 @@ export type OrderItem = {
 };
 
 export type OrderProduct = OrderItem & {
-    product: Product
-}
+    product: Product;
+};
 
 export type Order = {
     id: string;
@@ -71,6 +71,7 @@ export interface bodyProductDTO {
     compareAtPrice: number | undefined;
     description: string;
     details: string[];
+    images: string[];
     inStock: boolean;
     isNew: boolean;
     isBestSeller: boolean;
@@ -90,6 +91,7 @@ export type FormStateProduct = {
     compareAtPrice: string;
     description: string;
     details: string; // ← string (كل سطر = نقطة)
+    images: string[];
     inStock: boolean;
     isNew: boolean;
     isBestSeller: boolean;

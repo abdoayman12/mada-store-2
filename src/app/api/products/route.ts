@@ -43,7 +43,9 @@ export const POST = async (request: NextRequest) => {
             categoryId: z.string().min(1, "اختر الفئة"),
             price: z.number().min(1, "السعر مطلوب وصحيح"),
             description: z.string().min(1, "الوصف مطلوب"),
+            images: z.array(z.string()).min(1).max(6),
         });
+
         const validation = createShema.safeParse(body);
         if (!validation.success) {
             return NextResponse.json(
@@ -60,6 +62,7 @@ export const POST = async (request: NextRequest) => {
                 details: body.details,
                 categoryId: body.categoryId,
                 compareAtPrice: body.compareAtPrice,
+                images: body.images,
                 inStock: body.inStock,
                 isNew: body.isNew,
                 isBestSeller: body.isBestSeller,

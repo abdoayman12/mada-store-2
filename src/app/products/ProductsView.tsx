@@ -21,20 +21,20 @@ export default function ProductsView() {
     const { products, setProducts } = useProducts();
     const { category } = useCatgory();
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const res = await axios.get(
-                    "http://localhost:3000/api/products",
-                );
-                setProducts(res.data);
-                localStorage.setItem("products", JSON.stringify(res.data));
-            } catch (error) {
-                console.error(error);
-            }
+    async function fetchData() {
+        try {
+            const res = await axios.get("http://localhost:3000/api/products");
+            setProducts(res.data);
+            localStorage.setItem("products", JSON.stringify(res.data));
+        } catch (error) {
+            console.error(error);
         }
+    }
+
+    useEffect(() => {
         fetchData();
     }, []);
+
     const filtered = useMemo(() => {
         let list = activeCategory
             ? products?.filter(
@@ -52,7 +52,7 @@ export default function ProductsView() {
             list = [...list].sort((a, b) => b.rating - a.rating);
 
         return list;
-    }, [activeCategory, sort]);
+    }, [products, activeCategory, sort]);
 
     return (
         <div className="wrap py-12">
