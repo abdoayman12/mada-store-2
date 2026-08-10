@@ -16,6 +16,8 @@ type SortKey = "default" | "price-asc" | "price-desc" | "rating";
 export default function ProductsView() {
     const searchParams = useSearchParams();
     const activeCategory = searchParams.get("category");
+    const searchQuery = searchParams.get("q")?.trim() ?? "";
+    const normalizedQuery = searchQuery.toLowerCase();
     const [sort, setSort] = useState<SortKey>("default");
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
     const { products, setProducts } = useProducts();
@@ -44,6 +46,20 @@ export default function ProductsView() {
               )
             : products || [];
 
+        if (normalizedQuery) {
+            list = list.filter((product) => {
+                const haystack = [
+                    product.name,
+                    product.description,
+                    product.slug,
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+                return haystack.includes(normalizedQuery);
+            });
+        }
+
         if (sort === "price-asc")
             list = [...list].sort((a, b) => a.price - b.price);
         if (sort === "price-desc")
@@ -52,23 +68,28 @@ export default function ProductsView() {
             list = [...list].sort((a, b) => b.rating - a.rating);
 
         return list;
-    }, [products, activeCategory, sort]);
+    }, [products, activeCategory, normalizedQuery, sort, category]);
 
     return (
         <div className="wrap py-12">
             <div className="flex flex-col gap-2 border-b border-line pb-8">
                 <span className="eyebrow">المتجر</span>
                 <h1 className="font-display text-3xl font-bold text-ink sm:text-4xl">
-                    كل المنتجات
+                    {searchQuery
+                        ? `نتائج البحث عن “${searchQuery}”`
+                        : "كل المنتجات"}
                 </h1>
                 <p className="text-sm text-ink-soft">
-                    {filtered.length} منتج متاح
+                    {filtered.length} {searchQuery ? "منتج مطابق" : "منتج متاح"}
                 </p>
             </div>
 
             <div className="mt-8 grid gap-10 lg:grid-cols-[240px_1fr]">
                 <aside className="hidden lg:block">
-                    <CategoryFilters activeCategory={activeCategory} />
+                    <CategoryFilters
+                        activeCategory={activeCategory}
+                        searchQuery={searchQuery}
+                    />
                 </aside>
 
                 <div>
@@ -111,7 +132,10 @@ export default function ProductsView() {
 
                     {mobileFiltersOpen && (
                         <div className="mb-6 lg:hidden">
-                            <CategoryFilters activeCategory={activeCategory} />
+                            <CategoryFilters
+                                activeCategory={activeCategory}
+                                searchQuery={searchQuery}
+                            />
                         </div>
                     )}
 
@@ -145,15 +169,28 @@ export default function ProductsView() {
 
 function CategoryFilters({
     activeCategory,
+    searchQuery,
 }: {
     activeCategory: string | null;
+    searchQuery: string;
 }) {
     const { category } = useCatgory();
+
+    const buildCategoryHref = (slug?: string) => {
+        const params = new URLSearchParams();
+
+        if (slug) params.set("category", slug);
+        if (searchQuery) params.set("q", searchQuery);
+
+        const queryString = params.toString();
+        return queryString ? `/products?${queryString}` : "/products";
+    };
+
     return (
         <div className="space-y-1 rounded-2xl bg-white p-4 shadow-soft">
             <p className="px-2 pb-2 text-sm font-bold text-ink">الفئات</p>
             <Link
-                href="/products"
+                href={buildCategoryHref()}
                 className={cn(
                     "block rounded-xl px-3 py-2.5 text-sm font-medium transition",
                     !activeCategory
@@ -166,7 +203,7 @@ function CategoryFilters({
             {category.map((cat) => (
                 <Link
                     key={cat.id}
-                    href={`/products?category=${cat.slug}`}
+                    href={buildCategoryHref(cat.slug)}
                     className={cn(
                         "flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition",
                         activeCategory === cat.slug

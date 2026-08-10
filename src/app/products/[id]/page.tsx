@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -21,6 +21,26 @@ import { currency, findCategory } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { useProducts } from "@/context/ProductsContext";
 import { useCatgory } from "@/context/CategoryContext";
+import { Product } from "@/generated/prisma/client";
+
+const productDefult: Product = {
+    name: "",
+    id: "",
+    slug: "",
+    price: 0,
+    compareAtPrice: null,
+    description: "",
+    details: [],
+    images: [],
+    inStock: false,
+    isNew: false,
+    isBestSeller: false,
+    rating: 0,
+    reviewsCount: 0,
+    categoryId: "",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+};
 
 export default function ProductDetailsPage({
     params,
@@ -29,8 +49,18 @@ export default function ProductDetailsPage({
 }) {
     const { id } = use(params);
     const { products } = useProducts();
-    const product = products.find((p) => p.id === id);
-    if (!product) return notFound();
+    const [product, setProduct] = useState<Product>(productDefult);
+    const [showNotFoundPage, setShowNotFoundPage] = useState(false);
+    
+    useEffect(() => {
+        const productFind = products.find((p) => p.id === id);
+        setProduct(productFind || productDefult);
+        if (!productFind) {
+            setShowNotFoundPage(true);
+        }
+    }, [products]);
+
+    if (showNotFoundPage) return notFound();
 
     const related = getRelatedProducts(product, products);
     const { addItem } = useCart();

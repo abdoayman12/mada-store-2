@@ -1,17 +1,19 @@
-import { mkdir, writeFile } from "fs/promises";
-import { join } from "path";
-import { NextRequest, NextResponse } from "next/server";
+import cloudinary from "@/lib/cloudinary";
 import { verifyToken } from "@/lib/tokenAndCookies";
+import { NextRequest, NextResponse } from "next/server";
 
 export const POST = async (request: NextRequest) => {
     try {
-        // ── حماية: أدمن فقط ──────────────────────────────────────────────
+        // ── 1. حماية — أدمن فقط ──────────────────────────────────────────
         const user = verifyToken(request);
         if (!user || user.isAdmin !== true) {
-            return NextResponse.json({ message: "غير مصرح" }, { status: 401 });
+            return NextResponse.json(
+                { message: "غير مصرح — أدمن فقط" },
+                { status: 401 },
+            );
         }
 
-        // ── قراءة الملف ───────────────────────────────────────────────────
+        // ── 2. قراءة الملف من الـ request ────────────────────────────────
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
 
@@ -22,16 +24,21 @@ export const POST = async (request: NextRequest) => {
             );
         }
 
-        // ── التحقق من نوع الملف ───────────────────────────────────────────
-        const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-        if (!allowed.includes(file.type)) {
+        // ── 3. التحقق من نوع الملف ────────────────────────────────────────
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+        ];
+        if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
-                { message: "نوع الملف غير مسموح — jpg / png / webp / gif فقط" },
+                { message: "نوع الملف غير مدعوم — jpg / png / webp / gif فقط" },
                 { status: 400 },
             );
         }
 
-        // ── التحقق من الحجم (5 MB) ────────────────────────────────────────
+        // ── 4. التحقق من الحجم (5 MB) ─────────────────────────────────────
         const MAX_SIZE = 5 * 1024 * 1024;
         if (file.size > MAX_SIZE) {
             return NextResponse.json(
@@ -40,22 +47,27 @@ export const POST = async (request: NextRequest) => {
             );
         }
 
-        // ── تجهيز اسم فريد للملف ─────────────────────────────────────────
-        const ext = file.name.split(".").pop() ?? "jpg";
-        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        // ── 5. تحويل الملف لـ base64 Data URI عشان Cloudinary يقدر يقراه ──
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const dataUri = `data:${file.type};base64,${buffer.toString("base64")}`;
 
-        // ── الحفظ في public/uploads/ ──────────────────────────────────────
-        const uploadDir = join(process.cwd(), "public", "uploads");
-        await mkdir(uploadDir, { recursive: true });
+        // ── 6. رفع لـ Cloudinary ───────────────────────────────────────────
+        const result = await cloudinary.uploader.upload(dataUri, {
+            folder: "mada-store/products", // بيتنظموا في folder واحد
+            resource_type: "image",
+            // تحويل تلقائي لـ webp لتوفير مساحة وتحسين الأداء
+            format: "webp",
+            // ضبط الجودة تلقائي من Cloudinary
+            quality: "auto",
+        });
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(join(uploadDir, safeName), buffer);
-
-        const url = `/uploads/${safeName}`;
-        return NextResponse.json({ url }, { status: 201 });
+        // result.secure_url → https://res.cloudinary.com/your-cloud/...
+        return NextResponse.json({ url: result.secure_url }, { status: 201 });
     } catch (error) {
+        console.error("Upload error:", error);
         return NextResponse.json(
-            { message: `${error} — حاول تاني` },
+            { message: "فشل الرفع، حاول تاني" },
             { status: 500 },
         );
     }

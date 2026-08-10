@@ -134,7 +134,7 @@ export default function ImageUploader({
                             <img
                                 src={url}
                                 alt={`صورة ${i + 1}`}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain"
                                 onError={(e) => {
                                     (e.target as HTMLImageElement).src =
                                         "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23f0ede5'/%3E%3C/svg%3E";

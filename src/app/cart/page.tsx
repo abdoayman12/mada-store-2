@@ -58,7 +58,7 @@ export default function CartPage() {
                                     src={line.product.images[0]}
                                     alt={line.product.name}
                                     sizes="96px"
-                                    className="object-cover h-full"
+                                    className="object-contain h-full"
                                 />
                             </Link>
 

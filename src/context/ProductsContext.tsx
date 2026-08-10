@@ -6,7 +6,6 @@ import {
     useState,
     ReactNode,
     Dispatch,
-    useEffect,
 } from "react";
 import { Product } from "@/generated/prisma/client";
 
@@ -17,17 +16,19 @@ type ProductsContextValue = {
 
 const ProductsContext = createContext<ProductsContextValue | null>(null);
 
+const productsValue = () => {
+    try {
+        const raw = window.localStorage.getItem("products");
+        if (raw) return JSON.parse(raw);
+    } catch {
+        // ignore corrupted storage
+    }
+    return [];
+}
+
 export function ProductsProvider({ children }: { children: ReactNode }) {
-    const [products, setProducts] = useState<Product[]>([]);
-    
-    useEffect(() => {
-        try {
-            const raw = window.localStorage.getItem("products");
-            if (raw) setProducts(JSON.parse(raw));
-        } catch {
-            // ignore corrupted storage
-        }
-    }, []);
+    const [products, setProducts] = useState<Product[]>(productsValue());
+
     return (
         <ProductsContext.Provider value={{ products, setProducts }}>
             {children}

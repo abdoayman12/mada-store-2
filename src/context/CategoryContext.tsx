@@ -19,19 +19,21 @@ type CategorieContextValue = {
     setCategory: Dispatch<CategoryAndProducts[]>;
 };
 
+const categoryValue = () => {
+    try {
+        const raw = localStorage.getItem("category");
+        if (raw) return JSON.parse(raw);
+    } catch {
+        // ignore corrupted storage
+    }
+    return [];
+}
+
 const CategoryContext = createContext<CategorieContextValue | null>(null);
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
-    const [category, setCategory] = useState<CategoryAndProducts[]>([]);
+    const [category, setCategory] = useState<CategoryAndProducts[]>(categoryValue());
 
-    useEffect(() => {
-        try {
-            const raw = localStorage.getItem("category");
-            if (raw) setCategory(JSON.parse(raw));
-        } catch {
-            // ignore corrupted storage
-        }
-    }, []);
     return (
         <CategoryContext.Provider value={{ category, setCategory }}>
             {children}

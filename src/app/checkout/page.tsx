@@ -301,11 +301,11 @@ export default function CheckoutPage() {
                                 key={line.productId}
                                 className="flex items-center gap-3"
                             >
-                                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                                <div className="relative h-14 w-14 shrink-0 rounded-lg bg-sage-50">
                                     <img
                                         src={line.product.images[0]}
                                         alt={line.product.name}
-                                        className="object-cover h-full w-full"
+                                        className="object-contain h-full w-full"
                                     />
                                     <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-clay-500 text-[10px] font-bold text-cream-soft">
                                         {line.quantity}

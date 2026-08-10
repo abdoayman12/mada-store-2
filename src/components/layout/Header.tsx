@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { SubmitEvent, useMemo, useState } from "react";
 import {
     FiSearch,
     FiUser,
@@ -16,6 +16,7 @@ import {
 } from "react-icons/fi";
 import { useCart } from "@/context/CartContext";
 import { defaultValueUser, useAuth } from "@/context/AuthContext";
+import { useProducts } from "@/context/ProductsContext";
 import { cn } from "@/lib/utils";
 import axios from "axios";
 
@@ -31,9 +32,32 @@ export default function Header() {
     const router = useRouter();
     const { itemsCount } = useCart();
     const { user, setUser } = useAuth();
+    const { products } = useProducts();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const searchResults = useMemo(() => {
+        if (!normalizedQuery) return [];
+
+        return products
+            .filter((product) => {
+                const haystack = [
+                    product.name,
+                    product.description,
+                    product.slug,
+                    product.categoryId,
+                ]
+                    .join(" ")
+                    .toLowerCase();
+
+                return haystack.includes(normalizedQuery);
+            })
+            .slice(0, 6);
+    }, [normalizedQuery, products]);
 
     function handleLogout() {
         setLoading(true);
@@ -52,6 +76,22 @@ export default function Header() {
             });
         setUserMenuOpen(false);
         router.push("/");
+    }
+
+    function handleSearchSubmit(event?: SubmitEvent) {
+        event?.preventDefault();
+        const query = searchQuery.trim();
+        setSearchOpen(false);
+        setSearchQuery("");
+        router.push(
+            query ? `/products?q=${encodeURIComponent(query)}` : "/products",
+        );
+    }
+
+    function handleSelectProduct(productId: string) {
+        setSearchOpen(false);
+        setSearchQuery("");
+        router.push(`/products/${productId}`);
     }
 
     return (
@@ -94,13 +134,86 @@ export default function Header() {
                 {/* Actions */}
                 <div className="flex items-center gap-1.5">
                     {/* Search */}
-                    <button
-                        type="button"
-                        aria-label="بحث"
-                        className="hidden h-10 w-10 items-center justify-center rounded-full text-ink-soft transition hover:bg-sage-50 hover:text-sage-700 sm:flex"
-                    >
-                        <FiSearch size={18} />
-                    </button>
+                    <div className="relative hidden sm:block">
+                        <button
+                            type="button"
+                            aria-label="بحث"
+                            onClick={() => setSearchOpen((value) => !value)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full text-ink-soft transition hover:bg-sage-50 hover:text-sage-700"
+                        >
+                            <FiSearch size={18} />
+                        </button>
+
+                        {searchOpen && (
+                            <div className="absolute left-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-lift">
+                                <form
+                                    onSubmit={handleSearchSubmit}
+                                    className="flex items-center gap-2 border-b border-line px-3 py-2"
+                                >
+                                    <FiSearch
+                                        size={16}
+                                        className="text-ink-soft"
+                                    />
+                                    <input
+                                        autoFocus
+                                        value={searchQuery}
+                                        onChange={(e) =>
+                                            setSearchQuery(e.target.value)
+                                        }
+                                        placeholder="ابحث عن منتج..."
+                                        className="w-full border-0 bg-transparent px-1 py-2 text-sm text-ink outline-none placeholder:text-ink-faint"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="rounded-full bg-sage-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-sage-700"
+                                    >
+                                        بحث
+                                    </button>
+                                </form>
+
+                                {normalizedQuery ? (
+                                    searchResults.length > 0 ? (
+                                        <div className="max-h-80 overflow-y-auto p-2">
+                                            {searchResults.map((product) => (
+                                                <button
+                                                    key={product.id}
+                                                    type="button"
+                                                    onClick={() =>
+                                                        handleSelectProduct(
+                                                            product.id,
+                                                        )
+                                                    }
+                                                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-right transition hover:bg-sage-50"
+                                                >
+                                                    <img
+                                                        src={product.images[0]}
+                                                        alt={product.name}
+                                                        className="h-12 w-12 rounded-lg object-cover"
+                                                    />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-semibold text-ink">
+                                                            {product.name}
+                                                        </p>
+                                                        <p className="text-xs text-ink-soft">
+                                                            {product.price} ر.س
+                                                        </p>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="px-4 py-5 text-center text-sm text-ink-soft">
+                                            لا توجد منتجات مطابقة لبحثك
+                                        </div>
+                                    )
+                                ) : (
+                                    <div className="px-4 py-5 text-center text-sm text-ink-soft">
+                                        اكتب اسم المنتج للبحث فورًا
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* ── Auth area ──────────────────────────────────────────────────── */}
                     {user?.name ? (
