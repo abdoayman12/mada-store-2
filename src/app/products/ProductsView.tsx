@@ -25,7 +25,7 @@ export default function ProductsView() {
 
     async function fetchData() {
         try {
-            const res = await axios.get("http://localhost:3000/api/products");
+            const res = await axios.get("/api/products");
             setProducts(res.data);
             localStorage.setItem("products", JSON.stringify(res.data));
         } catch (error) {

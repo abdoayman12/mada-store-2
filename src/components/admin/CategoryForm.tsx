@@ -70,7 +70,7 @@ export default function CategoryForm({
         if (isEdit && categoryProps) {
             try {
                 const res = await axios.put(
-                    `http://localhost:3000/api/categories/${categoryProps.id}`,
+                    `/api/categories/${categoryProps.id}`,
                     {
                         name: form.name,
                         slug: form.slug,
@@ -89,7 +89,7 @@ export default function CategoryForm({
         } else {
             try {
                 const res = await axios.post(
-                    "http://localhost:3000/api/categories",
+                    "/api/categories",
                     {
                         name: form.name,
                         slug: form.slug,

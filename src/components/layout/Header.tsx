@@ -48,8 +48,6 @@ export default function Header() {
                 const haystack = [
                     product.name,
                     product.description,
-                    product.slug,
-                    product.categoryId,
                 ]
                     .join(" ")
                     .toLowerCase();
@@ -62,7 +60,7 @@ export default function Header() {
     function handleLogout() {
         setLoading(true);
         axios
-            .post("http://localhost:3000/api/user/logout")
+            .post("/api/user/logout")
             .then((res) => {
                 console.log(res.data.massage);
                 setUser(defaultValueUser);
@@ -145,7 +143,7 @@ export default function Header() {
                         </button>
 
                         {searchOpen && (
-                            <div className="absolute left-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-lift">
+                            <div className="absolute left-0 top-full z-50 mt-2 w-[360px] overflow-hidden rounded-2xl border border-line bg-white shadow-lift animate-fadeUp">
                                 <form
                                     onSubmit={handleSearchSubmit}
                                     className="flex items-center gap-2 border-b border-line px-3 py-2"

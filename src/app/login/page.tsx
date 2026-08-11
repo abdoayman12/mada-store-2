@@ -75,7 +75,7 @@ function LoginForm() {
 
         try {
             // ── API call ─────────────────────────────────────────────────────────
-            const res = axios.post("http://localhost:3000/api/user/login", {
+            const res = axios.post("/api/user/login", {
                 email: values.email,
                 password: values.password,
             });

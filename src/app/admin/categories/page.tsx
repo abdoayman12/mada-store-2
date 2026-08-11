@@ -20,7 +20,7 @@ export default function AdminCategoriesPage() {
     async function confirmDelete(id: string) {
         setLoading(true);
         try {
-            axios.delete(`http://localhost:3000/api/categories/${id}`);
+            axios.delete(`/api/categories/${id}`);
             const categoryFilter = category?.filter((item) => item.id !== id);
             setCategory(categoryFilter);
             localStorage.setItem("category", JSON.stringify(categoryFilter));
@@ -36,7 +36,7 @@ export default function AdminCategoriesPage() {
         async function fetchCategories() {
             try {
                 const res = await axios.get(
-                    "http://localhost:3000/api/categories",
+                    "/api/categories",
                 );
                 console.log(res.data);
                 setCategory(res.data);

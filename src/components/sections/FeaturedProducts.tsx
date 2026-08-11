@@ -15,11 +15,11 @@ export default function FeaturedProducts() {
         async function fetchData() {
             try {
                 const res = await axios.get(
-                    "http://localhost:3000/api/products",
+                    "/api/products",
                 );
                 setProducts(res.data);
                 localStorage.setItem("products", JSON.stringify(res.data));
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error(error);
             }
         }

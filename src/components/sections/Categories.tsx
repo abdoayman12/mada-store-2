@@ -11,11 +11,11 @@ export default function Categories() {
         async function fetchCategories() {
             try {
                 const res = await axios.get(
-                    "http://localhost:3000/api/categories",
+                    "/api/categories",
                 );
                 setCategory(res.data);
                 localStorage.setItem("category", JSON.stringify(res.data));
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error(error);
             }
         }

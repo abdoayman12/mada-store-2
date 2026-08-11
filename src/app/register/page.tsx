@@ -81,7 +81,7 @@ export default function RegisterPage() {
 
         try {
             // ── API call ─────────────────────────────────────────────────────────
-            const res = axios.post("http://localhost:3000/api/user/register", {
+            const res = axios.post("/api/user/register", {
                 name: values.name,
                 email: values.email,
                 phone: values.phone,

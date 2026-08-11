@@ -23,11 +23,17 @@ async function updateProductStats(productId: string) {
 // ─── GET /api/reviews/[productId] — عام (مش محتاج login) ─────────────────────
 
 export const GET = async (
-    _request: NextRequest,
+    request: NextRequest,
     { params }: { params: Promise<{ productId: string }> },
 ) => {
     try {
         const { productId } = await params;
+        if (!productId) {
+            return NextResponse.json(
+                { message: "productId not found" },
+                { status: 404 },
+            );
+        }
 
         const reviews = await prisma.review.findMany({
             where: { productId },
@@ -36,7 +42,13 @@ export const GET = async (
             },
             orderBy: { createdAt: "desc" },
         });
-
+        if (!reviews) {
+            return NextResponse.json(
+                { message: "reviews not found" },
+                { status: 404 },
+            );
+        }
+        
         return NextResponse.json(reviews, { status: 200 });
     } catch (error) {
         return NextResponse.json(

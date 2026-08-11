@@ -93,7 +93,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         if (isEdit && product) {
             try {
                 const res = await axios.put(
-                    `http://localhost:3000/api/products/${product.id}`,
+                    `/api/products/${product.id}`,
                     payload,
                 );
                 const productsUpd = products.map((p) =>
@@ -109,7 +109,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         } else {
             try {
                 const res = await axios.post(
-                    "http://localhost:3000/api/products",
+                    "/api/products",
                     payload,
                 );
                 console.log(res.data)

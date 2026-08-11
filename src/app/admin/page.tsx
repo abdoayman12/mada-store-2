@@ -32,7 +32,7 @@ export default function AdminProductsPage() {
     async function confirmDelete(id: string) {
         setLoading(true);
         axios
-            .delete(`http://localhost:3000/api/products/${id}`)
+            .delete(`/api/products/${id}`)
             .then((_) => {
                 const productFilter = products?.filter(
                     (item) => item.id !== id,
@@ -52,7 +52,7 @@ export default function AdminProductsPage() {
         async function fetchData() {
             try {
                 const res = await axios.get(
-                    "http://localhost:3000/api/products",
+                    "/api/products",
                 );
                 setProducts(res.data);
                 localStorage.setItem("products", JSON.stringify(res.data));

@@ -34,7 +34,7 @@ export default function AdminSidebar() {
     function handleLogout() {
         setLoading(true);
         axios
-            .post("http://localhost:3000/api/user/logout")
+            .post("/api/user/logout")
             .then((res) => {
                 console.log(res.data.massage);
                 setUser(defaultValueUser);

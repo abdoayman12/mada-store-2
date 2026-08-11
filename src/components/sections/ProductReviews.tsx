@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 import { FiEdit2, FiTrash2, FiUser, FiAlertCircle } from "react-icons/fi";
@@ -138,23 +138,24 @@ export default function ProductReviews({ productId }: { productId: string }) {
     const [submitSuccess, setSubmitSuccess] = useState("");
 
     // ── Fetch Reviews ──────────────────────────────────────────────────────
-    const fetchReviews = useCallback(async () => {
+    async function fetchReviews() {
         try {
             setFetchError("");
             const { data } = await axios.get<Review[]>(
                 `/api/reviews/${productId}`,
             );
             setReviews(data);
-        } catch {
-            setFetchError("تعذّر تحميل التقييمات، حاول تاني");
+        } catch (error: unknown) {
+            console.error("Error fetching reviews:", error);
+            // setFetchError("تعذّر تحميل التقييمات، حاول تاني");
         } finally {
             setLoading(false);
         }
-    }, [productId]);
+    }
 
     useEffect(() => {
         fetchReviews();
-    }, [fetchReviews]);
+    }, [productId]);
 
     // ── Derived data ───────────────────────────────────────────────────────
     const avg = calcAvg(reviews);
