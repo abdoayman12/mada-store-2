@@ -6,6 +6,7 @@ import { FiBell } from "react-icons/fi";
 
 const titles: Record<string, string> = {
     "/admin": "إدارة المنتجات",
+    "/admin/products": "إدارة المنتجات",
     "/admin/categories": "إدارة الفئات",
     "/admin/categories/new": "إضافة فئة جديدة",
     "/admin/products/new": "إضافة منتج جديد",

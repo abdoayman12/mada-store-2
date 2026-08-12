@@ -3,122 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import axios from "axios";
-import { FiEdit2, FiTrash2, FiUser, FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import StarSelector from "@/components/ui/StarSelector";
 import { Review } from "@/lib/types";
-import { buildDistribution, calcAvg, formatDate } from "@/lib/data";
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-/** شريط توزيع النجوم */
-function DistributionBar({
-    star,
-    count,
-    total,
-}: {
-    star: number;
-    count: number;
-    total: number;
-}) {
-    const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-    return (
-        <div className="flex items-center gap-2 text-sm">
-            <span className="w-4 text-left text-xs font-bold text-ink-soft">
-                {star}
-            </span>
-            <FaStar size={12} className="text-clay-400 shrink-0" />
-            <div className="flex-1 h-2 rounded-full bg-line overflow-hidden">
-                <div
-                    className="h-full rounded-full bg-clay-400 transition-all duration-700"
-                    style={{ width: `${pct}%` }}
-                />
-            </div>
-            <span className="w-6 text-xs text-ink-soft text-left">{count}</span>
-        </div>
-    );
-}
-
-/** كارت تقييم واحد */
-function ReviewCard({
-    review,
-    isOwner,
-    onEdit,
-    onDelete,
-}: {
-    review: Review;
-    isOwner: boolean;
-    onEdit: () => void;
-    onDelete: () => void;
-}) {
-    return (
-        <div className="rounded-2xl bg-white p-5 shadow-soft">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sage-50 text-sage-700">
-                        <FiUser size={18} />
-                    </div>
-                    <div>
-                        <p className="text-sm font-bold text-ink">
-                            {review.user.name}
-                        </p>
-                        <p className="text-xs text-ink-faint">
-                            {formatDate(review.createdAt)}
-                        </p>
-                    </div>
-                </div>
-
-                {/* أيقونات التعديل والحذف — للمالك فقط */}
-                {isOwner && (
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            type="button"
-                            onClick={onEdit}
-                            aria-label="تعديل التقييم"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition hover:bg-sage-50 hover:text-sage-700"
-                        >
-                            <FiEdit2 size={14} />
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onDelete}
-                            aria-label="حذف التقييم"
-                            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition hover:bg-red-50 hover:text-red-500"
-                        >
-                            <FiTrash2 size={14} />
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* النجوم */}
-            <div className="mt-3 flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                    <FaStar
-                        key={s}
-                        size={14}
-                        className={
-                            s <= review.rating
-                                ? "text-clay-400"
-                                : "text-ink-faint"
-                        }
-                    />
-                ))}
-            </div>
-
-            {/* التعليق */}
-            {review.comment && (
-                <p className="mt-3 text-sm leading-7 text-ink-soft">
-                    {review.comment}
-                </p>
-            )}
-        </div>
-    );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
+import { buildDistribution, calcAvg } from "@/lib/data";
+import ReviewCard from "../ui/ReviewCard";
+import DistributionBar from "../ui/DistributionBar";
 
 export default function ProductReviews({ productId }: { productId: string }) {
     const { user } = useAuth();
@@ -137,17 +29,18 @@ export default function ProductReviews({ productId }: { productId: string }) {
     const [submitError, setSubmitError] = useState("");
     const [submitSuccess, setSubmitSuccess] = useState("");
 
+    console.log(fetchError)
+
     // ── Fetch Reviews ──────────────────────────────────────────────────────
     async function fetchReviews() {
         try {
-            setFetchError("");
             const { data } = await axios.get<Review[]>(
                 `/api/reviews/${productId}`,
             );
             setReviews(data);
+            setFetchError("");
         } catch (error: unknown) {
-            console.error("Error fetching reviews:", error);
-            // setFetchError("تعذّر تحميل التقييمات، حاول تاني");
+            setFetchError("تعذّر تحميل التقييمات، حاول تاني");
         } finally {
             setLoading(false);
         }
