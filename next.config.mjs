@@ -1,14 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    serverExternalPackages: [
-        "jsonwebtoken",
-        "bcryptjs",
-        "@prisma/client",
-        "@prisma/adapter-pg",
-        "pg",
-        "cloudinary", // ← أضفنا cloudinary هنا
-    ],
-
     images: {
         remotePatterns: [
             { protocol: "https", hostname: "picsum.photos" },
