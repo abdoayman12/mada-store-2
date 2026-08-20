@@ -65,7 +65,7 @@ export const POST = async (request: NextRequest) => {
                 images: body.images,
                 inStock: body.inStock,
                 isNew: body.isNew,
-                isBestSeller: body.isBestSeller,
+                isBestSeller: body.isBestSeller,                
             },
         });
         return NextResponse.json(newProduct, { status: 201 });
