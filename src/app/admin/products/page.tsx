@@ -34,11 +34,11 @@ export default function AdminProductsPage() {
         axios
             .delete(`/api/products/${id}`)
             .then((_) => {
-                const productFilter = products?.filter(
+                const productNew = products?.filter(
                     (item) => item.id !== id,
                 );
-                setProducts(productFilter);
-                localStorage.setItem("products", JSON.stringify(productFilter));
+                setProducts(productNew);
+                localStorage.setItem("products", JSON.stringify(productNew));
             })
             .catch((error) => {
                 console.error(error);

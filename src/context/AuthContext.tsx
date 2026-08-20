@@ -44,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .get("/api/user")
                     .then((res) => {
                         setUser(res.data);
+                        localStorage.setItem("user", JSON.stringify(res.data));
                     })
                     .catch((error) => {
                         console.log(error);
